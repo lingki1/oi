@@ -103,12 +103,18 @@ docker login
 ```
 
 ### 3.3 推送镜像
+为镜像打标签 (Tag)
+您的本地镜像名称是 open-webui，标签是 latest。在推送到 Docker Hub 之前，您需要给它打上一个符合 Docker Hub 命名规范的标签：<您的 Docker Hub 用户名>/<仓库名>:<标签>。
+
+docker tag open-webui:latest <您的 Docker Hub 用户名>/open-webui:latest
 
 ```bash
 # 推送所有标签
 docker push yourusername/open-webui:latest
 docker push yourusername/open-webui:v1.0.0
 docker push yourusername/open-webui:no-ollama
+# 推送标签镜像
+docker push <您的 Docker Hub 用户名>/open-webui:latest
 
 # 如果有CUDA版本
 docker push yourusername/open-webui:cuda
@@ -228,10 +234,84 @@ sudo mkdir -p /opt/open-webui/data
 sudo chown $USER:$USER /opt/open-webui/data
 ```
 
-### 5.3 运行容器
+### 5.3 Docker数据卷说明
+
+#### 5.3.1 官方推荐的数据卷配置
+
+根据Open WebUI官方文档 <mcreference link="https://docs.openwebui.com/getting-started/quick-start/" index="2">2</mcreference>，推荐使用以下数据卷配置：
+
+```bash
+# 官方推荐：使用命名卷（Named Volume）
+docker run -d -p 3000:8080 -v open-webui:/app/backend/data --name open-webui ghcr.io/open-webui/open-webui:main
+```
+
+#### 5.3.2 数据卷的作用和重要性
+
+**数据持久化存储**：`-v open-webui:/app/backend/data` 参数的作用是：<mcreference link="https://docs.openwebui.com/getting-started/quick-start/" index="2">2</mcreference>
+- **确保数据持久化**：防止容器重启或删除时数据丢失
+- **自动数据恢复**：当使用相同的卷名重新启动容器时，会自动加载之前保存的所有数据
+- **包含的数据类型**：
+  - 聊天历史记录
+  - 用户配置和设置
+  - 上传的文档和文件
+  - 数据库文件
+  - 自定义模型配置
+
+#### 5.3.3 两种数据卷配置方式
+
+**方式一：命名卷（推荐）**
+```bash
+# 使用Docker管理的命名卷
+-v open-webui:/app/backend/data
+```
+
+**优点**：
+- Docker自动管理存储位置
+- 跨平台兼容性好
+- 自动处理权限问题
+- 便于备份和迁移
+
+**方式二：绑定挂载**
+```bash
+# 绑定到主机特定目录
+-v /opt/open-webui/data:/app/backend/data
+```
+
+**优点**：
+- 直接访问主机文件系统
+- 便于手动备份
+- 可以直接编辑配置文件
+
+#### 5.3.4 数据卷位置查看
+
+```bash
+# 查看命名卷详细信息
+docker volume inspect open-webui
+
+# 查看所有卷
+docker volume ls
+
+# 在不同系统中的存储位置：
+# Linux: /var/lib/docker/volumes/open-webui/_data
+# Windows (WSL2): \\wsl$\docker-desktop\mnt\docker-desktop-disk\data\docker\volumes\open-webui\_data
+# macOS: ~/Library/Containers/com.docker.docker/Data/vms/0/data/docker/volumes/open-webui/_data
+```
+
+### 5.4 运行容器
 
 #### 基础运行
 
+**方式一：使用命名卷（官方推荐）**
+```bash
+docker run -d \
+  --name open-webui \
+  -p 3000:8080 \
+  -v open-webui:/app/backend/data \
+  --restart unless-stopped \
+  yourusername/open-webui:latest
+```
+
+**方式二：使用绑定挂载**
 ```bash
 docker run -d \
   --name open-webui \
@@ -243,6 +323,18 @@ docker run -d \
 
 #### 连接外部Ollama服务
 
+**使用命名卷（推荐）**
+```bash
+docker run -d \
+  --name open-webui \
+  -p 3000:8080 \
+  -e OLLAMA_BASE_URL=http://your-ollama-server:11434 \
+  -v open-webui:/app/backend/data \
+  --restart unless-stopped \
+  yourusername/open-webui:latest
+```
+
+**使用绑定挂载**
 ```bash
 docker run -d \
   --name open-webui \
@@ -255,19 +347,21 @@ docker run -d \
 
 #### 使用OpenAI API
 
+**使用命名卷（推荐）**
 ```bash
 docker run -d \
   --name open-webui \
   -p 3000:8080 \
   -e OPENAI_API_KEY=your-openai-api-key \
   -e OPENAI_API_BASE_URL=https://api.openai.com/v1 \
-  -v /opt/open-webui/data:/app/backend/data \
+  -v open-webui:/app/backend/data \
   --restart unless-stopped \
   yourusername/open-webui:latest
 ```
 
 #### 完整配置示例
 
+**使用命名卷（推荐）**
 ```bash
 docker run -d \
   --name open-webui \
@@ -276,12 +370,12 @@ docker run -d \
   -e OPENAI_API_KEY=your-openai-api-key \
   -e WEBUI_SECRET_KEY=your-secret-key \
   -e WEBUI_AUTH=True \
-  -v /opt/open-webui/data:/app/backend/data \
+  -v open-webui:/app/backend/data \
   --restart unless-stopped \
   yourusername/open-webui:latest
 ```
 
-### 5.4 使用Docker Compose（推荐）
+### 5.5 使用Docker Compose（推荐）
 
 创建 `docker-compose.yml` 文件：
 
@@ -331,7 +425,7 @@ docker compose logs -f
 docker compose down
 ```
 
-### 5.5 配置反向代理（可选）
+### 5.6 配置反向代理（可选）
 
 #### 使用Nginx
 
@@ -472,9 +566,249 @@ docker run -d \
 
 ---
 
-## 7. 故障排除
+## 7. 数据卷推送和拉取教程
 
-### 7.1 常见问题
+### 7.1 数据卷备份和导出
+
+#### 7.1.1 备份命名卷到本地文件
+
+```bash
+# 备份命名卷（推荐方式）
+docker run --rm \
+  -v open-webui:/data \
+  -v $(pwd):/backup \
+  alpine tar czf /backup/open-webui-backup-$(date +%Y%m%d-%H%M%S).tar.gz -C /data .
+
+# Windows PowerShell版本
+docker run --rm `
+  -v open-webui:/data `
+  -v ${PWD}:/backup `
+  alpine tar czf /backup/open-webui-backup-$(Get-Date -Format "yyyyMMdd-HHmmss").tar.gz -C /data .
+```
+
+#### 7.1.2 备份绑定挂载目录
+
+```bash
+# 如果使用绑定挂载，直接压缩目录
+tar czf open-webui-backup-$(date +%Y%m%d-%H%M%S).tar.gz -C /opt/open-webui/data .
+
+# Windows版本
+Compress-Archive -Path "C:\opt\open-webui\data\*" -DestinationPath "open-webui-backup-$(Get-Date -Format 'yyyyMMdd-HHmmss').zip"
+```
+
+### 7.2 数据卷恢复和导入
+
+#### 7.2.1 从备份文件恢复到命名卷
+
+```bash
+# 创建新的命名卷（如果不存在）
+docker volume create open-webui
+
+# 从备份文件恢复数据
+docker run --rm \
+  -v open-webui:/data \
+  -v $(pwd):/backup \
+  alpine tar xzf /backup/open-webui-backup-20231201-143000.tar.gz -C /data
+
+# Windows PowerShell版本
+docker run --rm `
+  -v open-webui:/data `
+  -v ${PWD}:/backup `
+  alpine tar xzf /backup/open-webui-backup-20231201-143000.tar.gz -C /data
+```
+
+#### 7.2.2 恢复到绑定挂载目录
+
+```bash
+# 创建目录（如果不存在）
+sudo mkdir -p /opt/open-webui/data
+
+# 恢复数据
+tar xzf open-webui-backup-20231201-143000.tar.gz -C /opt/open-webui/data
+
+# Windows版本
+Expand-Archive -Path "open-webui-backup-20231201-143000.zip" -DestinationPath "C:\opt\open-webui\data"
+```
+
+### 7.3 跨服务器数据迁移
+
+#### 7.3.1 从源服务器导出数据
+
+```bash
+# 在源服务器上备份数据
+docker run --rm \
+  -v open-webui:/data \
+  -v $(pwd):/backup \
+  alpine tar czf /backup/migration-$(date +%Y%m%d).tar.gz -C /data .
+
+# 将备份文件传输到目标服务器
+scp migration-20231201.tar.gz user@target-server:/tmp/
+```
+
+#### 7.3.2 在目标服务器导入数据
+
+```bash
+# 在目标服务器上创建卷并导入数据
+docker volume create open-webui
+
+docker run --rm \
+  -v open-webui:/data \
+  -v /tmp:/backup \
+  alpine tar xzf /backup/migration-20231201.tar.gz -C /data
+```
+
+### 7.4 数据卷同步和推送
+
+#### 7.4.1 使用rsync同步数据
+
+```bash
+# 同步到远程服务器（绑定挂载方式）
+rsync -avz --progress /opt/open-webui/data/ user@remote-server:/opt/open-webui/data/
+
+# 从远程服务器同步
+rsync -avz --progress user@remote-server:/opt/open-webui/data/ /opt/open-webui/data/
+```
+
+#### 7.4.2 使用Docker Registry推送数据卷镜像
+
+```bash
+# 创建包含数据的镜像
+docker run --rm \
+  -v open-webui:/data \
+  -v $(pwd):/backup \
+  alpine tar czf /backup/data.tar.gz -C /data .
+
+# 创建数据镜像的Dockerfile
+cat > Dockerfile.data << EOF
+FROM alpine:latest
+COPY data.tar.gz /
+CMD ["tar", "xzf", "/data.tar.gz", "-C", "/data"]
+EOF
+
+# 构建数据镜像
+docker build -f Dockerfile.data -t yourusername/open-webui-data:latest .
+
+# 推送数据镜像
+docker push yourusername/open-webui-data:latest
+```
+
+#### 7.4.3 从Registry拉取数据卷
+
+```bash
+# 拉取数据镜像
+docker pull yourusername/open-webui-data:latest
+
+# 创建卷并导入数据
+docker volume create open-webui
+
+docker run --rm \
+  -v open-webui:/data \
+  yourusername/open-webui-data:latest
+```
+
+### 7.5 自动化数据卷管理脚本
+
+#### 7.5.1 备份脚本
+
+```bash
+#!/bin/bash
+# backup-volume.sh
+
+VOLUME_NAME="open-webui"
+BACKUP_DIR="/opt/backups"
+DATE=$(date +%Y%m%d-%H%M%S)
+BACKUP_FILE="${BACKUP_DIR}/${VOLUME_NAME}-backup-${DATE}.tar.gz"
+
+# 创建备份目录
+mkdir -p $BACKUP_DIR
+
+# 备份数据卷
+docker run --rm \
+  -v ${VOLUME_NAME}:/data \
+  -v ${BACKUP_DIR}:/backup \
+  alpine tar czf /backup/${VOLUME_NAME}-backup-${DATE}.tar.gz -C /data .
+
+echo "备份完成: $BACKUP_FILE"
+
+# 清理7天前的备份
+find $BACKUP_DIR -name "${VOLUME_NAME}-backup-*.tar.gz" -mtime +7 -delete
+```
+
+#### 7.5.2 恢复脚本
+
+```bash
+#!/bin/bash
+# restore-volume.sh
+
+if [ $# -ne 2 ]; then
+    echo "用法: $0 <备份文件> <卷名称>"
+    echo "示例: $0 /opt/backups/open-webui-backup-20231201-143000.tar.gz open-webui"
+    exit 1
+fi
+
+BACKUP_FILE=$1
+VOLUME_NAME=$2
+
+if [ ! -f "$BACKUP_FILE" ]; then
+    echo "错误: 备份文件不存在: $BACKUP_FILE"
+    exit 1
+fi
+
+# 创建卷（如果不存在）
+docker volume create $VOLUME_NAME
+
+# 恢复数据
+docker run --rm \
+  -v ${VOLUME_NAME}:/data \
+  -v $(dirname $BACKUP_FILE):/backup \
+  alpine tar xzf /backup/$(basename $BACKUP_FILE) -C /data
+
+echo "恢复完成: $VOLUME_NAME"
+```
+
+### 7.6 数据卷管理最佳实践
+
+#### 7.6.1 定期备份策略
+
+```bash
+# 添加到crontab进行定期备份
+# 每天凌晨2点备份
+0 2 * * * /opt/scripts/backup-volume.sh
+
+# 每周日凌晨3点同步到远程服务器
+0 3 * * 0 rsync -avz /opt/backups/ user@backup-server:/opt/open-webui-backups/
+```
+
+#### 7.6.2 数据验证
+
+```bash
+# 验证备份文件完整性
+tar tzf open-webui-backup-20231201-143000.tar.gz > /dev/null && echo "备份文件完整" || echo "备份文件损坏"
+
+# 检查数据卷大小
+docker system df -v | grep open-webui
+```
+
+#### 7.6.3 安全注意事项
+
+- **加密备份**: 对敏感数据进行加密备份
+- **访问控制**: 限制备份文件的访问权限
+- **网络传输**: 使用安全的传输方式（SSH、HTTPS）
+- **存储位置**: 将备份存储在不同的物理位置
+
+```bash
+# 加密备份示例
+gpg --symmetric --cipher-algo AES256 open-webui-backup-20231201.tar.gz
+
+# 解密备份
+gpg --decrypt open-webui-backup-20231201.tar.gz.gpg > open-webui-backup-20231201.tar.gz
+```
+
+---
+
+## 8. 故障排除
+
+### 8.1 常见问题
 
 #### 容器无法启动
 
@@ -519,7 +853,7 @@ docker run -d \
   yourusername/open-webui:latest
 ```
 
-### 7.2 性能优化
+### 8.2 性能优化
 
 #### 启用Docker日志轮转
 
@@ -554,7 +888,7 @@ docker run -d \
   yourusername/open-webui:latest
 ```
 
-### 7.3 监控和日志
+### 8.3 监控和日志
 
 #### 设置日志监控
 
@@ -578,9 +912,9 @@ curl -f http://localhost:3000/health || echo "Health check failed"
 
 ---
 
-## 8. 自动化脚本
+## 9. 自动化脚本
 
-### 8.1 构建和推送脚本
+### 9.1 构建和推送脚本
 
 创建 `build-and-push.sh`：
 
@@ -611,7 +945,7 @@ docker push ${DOCKER_USERNAME}/${IMAGE_NAME}:no-ollama
 echo "完成！镜像已推送到 ${DOCKER_USERNAME}/${IMAGE_NAME}"
 ```
 
-### 8.2 VPS部署脚本
+### 9.2 VPS部署脚本
 
 创建 `deploy.sh`：
 
@@ -655,7 +989,7 @@ docker ps | grep ${CONTAINER_NAME}
 echo "部署完成！访问 http://$(curl -s ifconfig.me):${PORT}"
 ```
 
-### 8.3 备份脚本
+### 9.3 备份脚本
 
 创建 `backup.sh`：
 
@@ -683,9 +1017,9 @@ echo "备份完成: ${BACKUP_DIR}/${BACKUP_FILE}"
 
 ---
 
-## 9. 安全建议
+## 10. 安全建议
 
-### 9.1 基础安全配置
+### 10.1 基础安全配置
 
 ```bash
 # 配置防火墙
@@ -706,7 +1040,7 @@ sudo apt install -y unattended-upgrades
 sudo dpkg-reconfigure -plow unattended-upgrades
 ```
 
-### 9.2 Docker安全
+### 10.2 Docker安全
 
 ```bash
 # 以非root用户运行容器
@@ -731,7 +1065,7 @@ docker run -d \
 
 ---
 
-## 10. 结语
+## 11. 结语
 
 本教程涵盖了Open WebUI Docker部署的完整流程，从本地构建到生产环境部署。根据您的具体需求，可以选择相应的配置选项。
 
