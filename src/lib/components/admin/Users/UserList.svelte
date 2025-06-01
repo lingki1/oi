@@ -56,6 +56,8 @@
 
 	const onUpdateRole = (user) => {
 		if (user.role === 'user') {
+			updateRoleHandler(user.id, 'premium');
+		} else if (user.role === 'premium') {
 			updateRoleHandler(user.id, 'admin');
 		} else if (user.role === 'pending') {
 			updateRoleHandler(user.id, 'user');
@@ -141,10 +143,12 @@
 	message={$i18n.t(`Are you sure you want to update this user\'s role to **{{ROLE}}**?`, {
 		ROLE:
 			selectedUser?.role === 'user'
-				? 'admin'
-				: selectedUser?.role === 'pending'
-					? 'user'
-					: 'pending'
+				? 'premium'
+				: selectedUser?.role === 'premium'
+					? 'admin'
+					: selectedUser?.role === 'pending'
+						? 'user'
+						: 'pending'
 	})}
 />
 
@@ -419,9 +423,9 @@
 								}}
 							>
 								<Badge
-									type={user.role === 'admin' ? 'info' : user.role === 'user' ? 'success' : 'muted'}
-									content={$i18n.t(user.role)}
-								/>
+								type={user.role === 'admin' ? 'info' : user.role === 'premium' ? 'warning' : user.role === 'user' ? 'success' : 'muted'}
+								content={$i18n.t(user.role)}
+							/>
 							</button>
 						</td>
 						<td class="px-3 py-1 font-medium text-gray-900 dark:text-white w-max">

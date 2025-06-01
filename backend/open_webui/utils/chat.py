@@ -45,7 +45,6 @@ from open_webui.utils.plugin import (
     get_function_module_from_cache,
 )
 from open_webui.utils.models import get_all_models, check_model_access
-from open_webui.utils.rate_limit import group_rate_limiter
 from open_webui.utils.payload import convert_payload_openai_to_ollama
 from open_webui.utils.response import (
     convert_response_ollama_to_openai,
@@ -201,14 +200,6 @@ async def generate_chat_completion(
         if not bypass_filter and user.role == "user":
             try:
                 check_model_access(user, model)
-            except Exception as e:
-                raise e
-            
-            # Check rate limiting for user groups
-            try:
-                rate_limit_error = group_rate_limiter.check_rate_limit(user.id)
-                if rate_limit_error:
-                    raise Exception(rate_limit_error)
             except Exception as e:
                 raise e
 

@@ -486,7 +486,7 @@ OAUTH_ALLOWED_ROLES = PersistentConfig(
     "oauth.allowed_roles",
     [
         role.strip()
-        for role in os.environ.get("OAUTH_ALLOWED_ROLES", "user,admin").split(",")
+        for role in os.environ.get("OAUTH_ALLOWED_ROLES", "user,premium,admin").split(",")
     ],
 )
 

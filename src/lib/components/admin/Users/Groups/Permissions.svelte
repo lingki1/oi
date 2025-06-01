@@ -39,11 +39,6 @@
 			image_generation: true,
 			code_interpreter: true,
 			notes: true
-		},
-		rate_limit: {
-			enabled: false,
-			sliding_window_limit: 100,
-			sliding_window_minutes: 15
 		}
 	};
 
@@ -61,8 +56,7 @@
 			workspace: { ...defaults.workspace, ...obj.workspace },
 			sharing: { ...defaults.sharing, ...obj.sharing },
 			chat: { ...defaults.chat, ...obj.chat },
-			features: { ...defaults.features, ...obj.features },
-			rate_limit: { ...defaults.rate_limit, ...obj.rate_limit }
+			features: { ...defaults.features, ...obj.features }
 		};
 	}
 
@@ -395,51 +389,5 @@
 
 			<Switch bind:state={permissions.features.notes} />
 		</div>
-	</div>
-
-	<hr class=" border-gray-100 dark:border-gray-850 my-2" />
-
-	<div>
-		<div class=" mb-2 text-sm font-medium">{$i18n.t('Rate Limiting')}</div>
-
-		<div class="  flex w-full justify-between my-2 pr-2">
-			<div class=" self-center text-xs font-medium">
-				{$i18n.t('Enable Rate Limiting')}
-			</div>
-
-			<Switch bind:state={permissions.rate_limit.enabled} />
-		</div>
-
-		{#if permissions.rate_limit.enabled}
-			<div class="space-y-2 ml-2">
-				<div class="flex items-center justify-between">
-					<div class="text-xs font-medium">
-						{$i18n.t('Sliding Window Limit')}
-					</div>
-					<input
-						type="number"
-						min="1"
-						max="10000"
-						bind:value={permissions.rate_limit.sliding_window_limit}
-						class="w-20 px-2 py-1 text-xs bg-transparent border border-gray-300 dark:border-gray-600 rounded"
-					/>
-				</div>
-				<div class="flex items-center justify-between">
-					<div class="text-xs font-medium">
-						{$i18n.t('Sliding Window Minutes')}
-					</div>
-					<input
-						type="number"
-						min="1"
-						max="1440"
-						bind:value={permissions.rate_limit.sliding_window_minutes}
-						class="w-20 px-2 py-1 text-xs bg-transparent border border-gray-300 dark:border-gray-600 rounded"
-					/>
-				</div>
-				<div class="text-xs text-gray-500 mt-1">
-					{$i18n.t('Limit users to')} {permissions.rate_limit.sliding_window_limit} {$i18n.t('requests per')} {permissions.rate_limit.sliding_window_minutes} {$i18n.t('minutes')}
-				</div>
-			</div>
-		{/if}
 	</div>
 </div>
