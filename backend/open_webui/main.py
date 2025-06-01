@@ -1182,7 +1182,7 @@ async def get_models(request: Request, user=Depends(get_verified_user)):
         )
 
     # Filter out models that the user does not have access to
-    if user.role == "user" and not BYPASS_MODEL_ACCESS_CONTROL:
+    if user.role in ["user", "premium"] and not BYPASS_MODEL_ACCESS_CONTROL:
         models = get_filtered_models(models, user)
 
     log.debug(
@@ -1220,7 +1220,7 @@ async def chat_completion(
             model_info = Models.get_model_by_id(model_id)
 
             # Check if user has access to the model
-            if not BYPASS_MODEL_ACCESS_CONTROL and user.role == "user":
+            if not BYPASS_MODEL_ACCESS_CONTROL and user.role in ["user", "premium"]:
                 try:
                     check_model_access(user, model)
                 except Exception as e:
