@@ -829,6 +829,7 @@
 	"Model unloaded successfully": "模型卸载成功",
 	"Model updated successfully": "模型更新成功",
 	"Double-click to edit model name": "双击编辑模型名称",
+	"Edit model name": "编辑模型名称",
 	"Model(s) do not support file upload": "模型不支持文件上传",
 	"Modelfile Content": "模型文件内容",
 	"Models": "模型",

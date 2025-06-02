@@ -345,7 +345,7 @@
 			{#if models.length > 0}
 				{#each filteredModels as model, modelIdx (model.id)}
 					<div
-						class=" flex space-x-4 cursor-pointer w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-lg transition {model
+						class=" flex space-x-4 cursor-pointer w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-lg transition group {model
 							?.meta?.hidden
 							? 'opacity-50 dark:opacity-50'
 							: ''}"
@@ -401,12 +401,34 @@
 											autofocus
 										/>
 									{:else}
-										<div 
-											class="font-semibold line-clamp-1 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-1 py-0.5 transition-colors"
-											on:dblclick={() => startEditingModelName(model)}
-											title="{$i18n.t('Double-click to edit model name')}"
-										>
-											{model.name}
+										<div class="flex items-center gap-2">
+											<div class="font-semibold line-clamp-1 flex-1">
+												{model.name}
+											</div>
+											<button
+												class="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
+												on:click={(e) => {
+													e.stopPropagation();
+													startEditingModelName(model);
+												}}
+												title="{$i18n.t('Edit model name')}"
+												type="button"
+											>
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													fill="none"
+													viewBox="0 0 24 24"
+													stroke-width="1.5"
+													stroke="currentColor"
+													class="w-3 h-3"
+												>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"
+													/>
+												</svg>
+											</button>
 										</div>
 									{/if}
 								</Tooltip>
