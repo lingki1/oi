@@ -52,6 +52,10 @@
 	let showConfigModal = false;
 	let showManageModal = false;
 
+	// 编辑状态管理
+	let editingModelId = null;
+	let editingModelName = '';
+
 	$: if (models) {
 		filteredModels = models
 			.filter((m) => searchValue === '' || m.name.toLowerCase().includes(searchValue.toLowerCase()))
@@ -343,7 +347,57 @@
 									className=" w-fit"
 									placement="top-start"
 								>
-									<div class="  font-semibold line-clamp-1">{model.name}</div>
+									{#if editingModelId === model.id}
+										<input
+											class="font-semibold bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 w-full text-sm"
+											bind:value={editingModelName}
+											on:blur={() => {
+												if (editingModelName.trim() && editingModelName !== model.name) {
+													const updatedModel = { ...model, name: editingModelName.trim() };
+													upsertModelHandler(updatedModel);
+												}
+												editingModelId = null;
+												editingModelName = '';
+											}}
+											on:keydown={(e) => {
+												if (e.key === 'Enter') {
+													e.target.blur();
+												} else if (e.key === 'Escape') {
+													editingModelId = null;
+													editingModelName = '';
+												}
+											}}
+											on:click|stopPropagation
+											autofocus
+										/>
+									{:else}
+										<div class="flex items-center gap-1">
+											<div class="font-semibold line-clamp-1 flex-1">{model.name}</div>
+											<button
+												class="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-all"
+												on:click|stopPropagation={() => {
+													editingModelId = model.id;
+													editingModelName = model.name;
+												}}
+												title="编辑模型名称"
+											>
+												<svg
+													xmlns="http://www.w3.org/2000/svg"
+													fill="none"
+													viewBox="0 0 24 24"
+													stroke-width="1.5"
+													stroke="currentColor"
+													class="w-3 h-3"
+												>
+													<path
+														stroke-linecap="round"
+														stroke-linejoin="round"
+														d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"
+													/>
+												</svg>
+											</button>
+										</div>
+									{/if}
 								</Tooltip>
 								<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1 text-gray-500">
 									<span class=" line-clamp-1">

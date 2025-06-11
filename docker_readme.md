@@ -217,7 +217,7 @@ docker-compose --version
 
 ```bash
 # 拉取最新版本
-docker pull yourusername/open-webui:latest
+  docker pull yourusername/open-webui:latest
 
 # 或拉取特定版本
 docker pull yourusername/open-webui:v1.0.0
