@@ -67,10 +67,6 @@
 
 	let searchValue = '';
 
-	// Model name editing state
-	let editingModelId = null;
-	let editingModelName = '';
-
 	const downloadModels = async (models) => {
 		let blob = new Blob([JSON.stringify(models)], {
 			type: 'application/json'
@@ -100,43 +96,6 @@
 				};
 			}
 		});
-	};
-
-	const startEditingModelName = (model) => {
-		editingModelId = model.id;
-		editingModelName = model.name;
-	};
-
-	const cancelEditingModelName = () => {
-		editingModelId = null;
-		editingModelName = '';
-	};
-
-	const saveModelName = async (model) => {
-		if (editingModelName.trim() === '' || editingModelName === model.name) {
-			cancelEditingModelName();
-			return;
-		}
-
-		try {
-			const updatedModel = {
-				...model,
-				name: editingModelName.trim()
-			};
-
-			const res = await updateModelById(localStorage.token, model.id, updatedModel);
-			if (res) {
-				toast.success($i18n.t('Model name updated successfully'));
-				// Update the model in the local array
-				models = models.map((m) => (m.id === model.id ? { ...m, name: editingModelName.trim() } : m));
-				cancelEditingModelName();
-			} else {
-				toast.error($i18n.t('Failed to update model name'));
-			}
-		} catch (error) {
-			console.error('Error updating model name:', error);
-			toast.error($i18n.t('Failed to update model name'));
-		}
 	};
 
 	const upsertModelHandler = async (model) => {
@@ -345,7 +304,7 @@
 			{#if models.length > 0}
 				{#each filteredModels as model, modelIdx (model.id)}
 					<div
-						class=" flex space-x-4 cursor-pointer w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-lg transition group {model
+						class=" flex space-x-4 cursor-pointer w-full px-3 py-2 dark:hover:bg-white/5 hover:bg-black/5 rounded-lg transition {model
 							?.meta?.hidden
 							? 'opacity-50 dark:opacity-50'
 							: ''}"
@@ -384,53 +343,7 @@
 									className=" w-fit"
 									placement="top-start"
 								>
-									{#if editingModelId === model.id}
-										<input
-											class="font-semibold bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
-											bind:value={editingModelName}
-											on:keydown={(e) => {
-												if (e.key === 'Enter') {
-													e.preventDefault();
-													saveModelName(model);
-												} else if (e.key === 'Escape') {
-													e.preventDefault();
-													cancelEditingModelName();
-												}
-											}}
-											on:blur={() => saveModelName(model)}
-											autofocus
-										/>
-									{:else}
-										<div class="flex items-center gap-2">
-											<div class="font-semibold line-clamp-1 flex-1">
-												{model.name}
-											</div>
-											<button
-												class="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700 transition-all"
-												on:click={(e) => {
-													e.stopPropagation();
-													startEditingModelName(model);
-												}}
-												title="{$i18n.t('Edit model name')}"
-												type="button"
-											>
-												<svg
-													xmlns="http://www.w3.org/2000/svg"
-													fill="none"
-													viewBox="0 0 24 24"
-													stroke-width="1.5"
-													stroke="currentColor"
-													class="w-3 h-3"
-												>
-													<path
-														stroke-linecap="round"
-														stroke-linejoin="round"
-														d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125"
-													/>
-												</svg>
-											</button>
-										</div>
-									{/if}
+									<div class="  font-semibold line-clamp-1">{model.name}</div>
 								</Tooltip>
 								<div class=" text-xs overflow-hidden text-ellipsis line-clamp-1 text-gray-500">
 									<span class=" line-clamp-1">

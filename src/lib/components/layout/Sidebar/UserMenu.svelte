@@ -9,6 +9,7 @@
 	import { fade, slide } from 'svelte/transition';
 	import Tooltip from '$lib/components/common/Tooltip.svelte';
 	import { userSignOut } from '$lib/apis/auths';
+	import { getUserById } from '$lib/apis/users';
 	import QuestionMarkCircle from '$lib/components/icons/QuestionMarkCircle.svelte';
 	import Map from '$lib/components/icons/Map.svelte';
 	import Keyboard from '$lib/components/icons/Keyboard.svelte';
@@ -22,8 +23,51 @@
 	export let className = 'max-w-[240px]';
 
 	let showShortcuts = false;
+	let onlineUsers = [];
+	let showOnlineUsers = false;
 
 	const dispatch = createEventDispatcher();
+
+	// 获取在线用户详细信息
+	const fetchOnlineUsers = async () => {
+		if (!$activeUserIds || $activeUserIds.length === 0 || role !== 'admin') {
+			onlineUsers = [];
+			return;
+		}
+
+		try {
+			const token = localStorage.getItem('token');
+			if (!token) return;
+
+			const userPromises = $activeUserIds.map(async (userId) => {
+				try {
+					const userData = await getUserById(token, userId);
+					return {
+						id: userId,
+						name: userData.name,
+						profile_image_url: userData.profile_image_url
+					};
+				} catch (error) {
+					console.error(`Failed to fetch user ${userId}:`, error);
+					return {
+						id: userId,
+						name: userId,
+						profile_image_url: '/user.png'
+					};
+				}
+			});
+
+			onlineUsers = await Promise.all(userPromises);
+		} catch (error) {
+			console.error('Failed to fetch online users:', error);
+			onlineUsers = [];
+		}
+	};
+
+	// 当activeUserIds变化时重新获取用户信息
+	$: if ($activeUserIds && role === 'admin') {
+		fetchOnlineUsers();
+	}
 </script>
 
 <ShortcutsModal bind:show={showShortcuts} />
@@ -269,12 +313,13 @@
 			{#if $activeUserIds?.length > 0}
 				<hr class=" border-gray-100 dark:border-gray-800 my-1 p-0" />
 
-				<Tooltip
-					content={$USAGE_POOL && $USAGE_POOL.length > 0
-						? `${$i18n.t('Running')}: ${$USAGE_POOL.join(', ')} ✨`
-						: ''}
-				>
-					<div class="flex rounded-md py-1 px-3 text-xs gap-2.5 items-center">
+				{#if role === 'admin'}
+					<button
+						class="flex rounded-md py-1 px-3 text-xs gap-2.5 items-center w-full hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+						on:click={() => {
+							showOnlineUsers = !showOnlineUsers;
+						}}
+					>
 						<div class=" flex items-center">
 							<span class="relative flex size-2">
 								<span
@@ -284,7 +329,7 @@
 							</span>
 						</div>
 
-						<div class=" ">
+						<div class="flex-1 text-left">
 							<span class="">
 								{$i18n.t('Active Users')}:
 							</span>
@@ -292,8 +337,75 @@
 								{$activeUserIds?.length}
 							</span>
 						</div>
-					</div>
-				</Tooltip>
+
+						<div class="ml-auto">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke-width="1.5"
+								stroke="currentColor"
+								class="w-4 h-4 transition-transform {showOnlineUsers ? 'rotate-180' : ''}"
+							>
+								<path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+							</svg>
+						</div>
+					</button>
+
+					{#if showOnlineUsers && onlineUsers.length > 0}
+						<div class="px-3 py-1 max-h-48 overflow-y-auto" transition:slide={{ duration: 200 }}>
+							{#each onlineUsers as onlineUser (onlineUser.id)}
+								<div class="flex items-center gap-2 py-1.5 px-2 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+									<img
+										class="rounded-full size-6 object-cover"
+										src={onlineUser.profile_image_url?.startsWith('http') || onlineUser.profile_image_url?.startsWith('data:') 
+											? onlineUser.profile_image_url 
+											: `/user.png`}
+										alt={onlineUser.name}
+										on:error={(e) => {
+											e.target.src = '/user.png';
+										}}
+									/>
+									<div class="flex-1 min-w-0">
+										<div class="text-xs font-medium truncate">{onlineUser.name}</div>
+										<div class="text-xs text-gray-500 dark:text-gray-400 truncate">{onlineUser.id}</div>
+									</div>
+									<div class="flex items-center">
+										<span class="relative flex size-2">
+											<span class="relative inline-flex rounded-full size-2 bg-green-500" />
+										</span>
+									</div>
+								</div>
+							{/each}
+						</div>
+					{/if}
+				{:else}
+					<Tooltip
+						content={$USAGE_POOL && $USAGE_POOL.length > 0
+							? `${$i18n.t('Running')}: ${$USAGE_POOL.join(', ')} ✨`
+							: ''}
+					>
+						<div class="flex rounded-md py-1 px-3 text-xs gap-2.5 items-center">
+							<div class=" flex items-center">
+								<span class="relative flex size-2">
+									<span
+										class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+									/>
+									<span class="relative inline-flex rounded-full size-2 bg-green-500" />
+								</span>
+							</div>
+
+							<div class=" ">
+								<span class="">
+									{$i18n.t('Active Users')}:
+								</span>
+								<span class=" font-semibold">
+									{$activeUserIds?.length}
+								</span>
+							</div>
+						</div>
+					</Tooltip>
+				{/if}
 			{/if}
 
 			<!-- <DropdownMenu.Item class="flex items-center py-1.5 px-3 text-sm ">
